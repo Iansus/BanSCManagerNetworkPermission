@@ -214,10 +214,12 @@ End {}
 }
 
 # Uncomment to print permissions over the SCManager
-Get-SCManagerPermission
+# Get-SCManagerPermission
 
 # Uncomment to harden NT AUTHORITY\NETWORK permissions over the SCManager
-# Set-SCManagerPermission -Confirm:$False
+Set-SCManagerPermission -Confirm:$False
+Get-SCManagerPermission
 
 # Uncomment to restore default permissions over the SCManager
 # Restore-SCManagerPermission -Confirm:$False
+# Get-SCManagerPermission
