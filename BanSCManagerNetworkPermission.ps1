@@ -1,5 +1,5 @@
 # Original resource https://p0w3rsh3ll.wordpress.com/2017/10/04/service-control-manager-acl-module/
-# Adapted for PowerShell v2+ by François LELIEVRE - 24/04/2019
+# Adapted for PowerShell v2+ by Francois LELIEVRE - 24/04/2019
 # Uncomment wanted action at the end of the script (ban / unban / show permissions)
 
 Function Restore-SCManagerPermission {
@@ -28,7 +28,6 @@ Begin {
 Process {
     if ($PSCmdlet.ShouldProcess(('Item: {0} Property: {1}' -f $HT['Path'],'Security'),'Change binary value')) {
 
-        # Get current permissions
         $csd = $(
             try {
                 New-Object -TypeName System.Security.AccessControl.CommonSecurityDescriptor -ArgumentList (
@@ -59,7 +58,7 @@ Process {
                 Write-Warning -Message "Failed to remove access because $($_.Exception.Message)"
             }
         }
-        # Commit changes
+
         try {
             $sddl = $csd.GetSddlForm([System.Security.AccessControl.AccessControlSections]::Access)
             $null = (& (Get-Command "$($env:SystemRoot)\System32\sc.exe") @('sdset','scmanager',"$($sddl)"))
@@ -96,7 +95,7 @@ Begin {
 }
 Process {
     if ($PSCmdlet.ShouldProcess(('Item: {0} Property: {1}' -f $HT['Path'],'Security'),'Change binary value')) {
-        # Get current permissions
+
         $csd = $(
             try {
                 New-Object -TypeName System.Security.AccessControl.CommonSecurityDescriptor -ArgumentList (
@@ -113,9 +112,9 @@ Process {
                 )
             }
         )
-        # If already present
+
         if ($csd.DiscretionaryAcl | foreach-object { if ($_.SecurityIdentifier.Value -eq 'S-1-5-2') { return $True } }) {
-            # Remove first
+
             $csd.DiscretionaryAcl | Where-Object { $_.SecurityIdentifier.Value -eq 'S-1-5-2' } | ForEach-Object {
                 try {
                     $csd.DiscretionaryAcl.RemoveAccessSpecific(
@@ -130,7 +129,7 @@ Process {
                 }
             }
         }
-        # Add it now
+
         'S-1-5-2' | ForEach-Object {
             try {
                 $csd.DiscretionaryAcl.AddAccess(
@@ -145,12 +144,7 @@ Process {
                 Write-Warning -Message "Failed to add access because $($_.Exception.Message)"
             }
         }
-        # Commit changes
         try {
-            # Reboot would be required with the following method
-            # $data = New-Object -TypeName System.Byte[] -ArgumentList $csd.BinaryLength
-            # $csd.GetBinaryForm($data,0)
-            # Set-ItemProperty @HT -Name Security -Value $data
             $sddl = $csd.GetSddlForm([System.Security.AccessControl.AccessControlSections]::Access)
             $null = (& (Get-Command "$($env:SystemRoot)\System32\sc.exe") @('sdset','scmanager',"$($sddl)"))
             Write-Verbose -Message 'Successfully set binary ACL in the registry' -Verbose
@@ -212,14 +206,3 @@ Process {
 }
 End {}
 }
-
-# Uncomment to print permissions over the SCManager
-# Get-SCManagerPermission
-
-# Uncomment to harden NT AUTHORITY\NETWORK permissions over the SCManager
-Set-SCManagerPermission -Confirm:$False
-Get-SCManagerPermission
-
-# Uncomment to restore default permissions over the SCManager
-# Restore-SCManagerPermission -Confirm:$False
-# Get-SCManagerPermission
